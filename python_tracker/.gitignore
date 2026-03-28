@@ -5,3 +5,7 @@
 .ruff_cache/
 __pycache__/
 *.pyc
+
+output/
+yolov8n.pt
+*.mp4
