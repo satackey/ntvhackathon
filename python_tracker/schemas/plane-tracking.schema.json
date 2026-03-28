@@ -28,7 +28,37 @@
         "fps": 29.97002997002997,
         "total_frames": 12663,
         "inference_stride": 3,
-        "contains_interpolated_detections": true
+        "contains_interpolated_detections": true,
+        "flight_radar_enrichment": {
+          "enabled": true,
+          "provider": "flightradar24",
+          "strategy": "track_midpoint_sampling",
+          "status": "matched",
+          "recording_started_at": "2026-03-28T12:53:05+09:00",
+          "timezone": "Asia/Tokyo",
+          "camera_latitude": 35.55362240541361,
+          "camera_longitude": 139.78716594923188,
+          "camera_bearing_degrees": 90,
+          "camera_horizontal_fov_degrees": 60,
+          "search_radius_km": 25,
+          "search_bounds": "35.778199,35.329046,139.510166,140.064166",
+          "tracks_seen": 4,
+          "tracks_skipped_persistent": 1,
+          "tracks_queried": 3,
+          "tracks_matched": 2,
+          "tracks_no_match": 1,
+          "tracks_error": 0,
+          "cache_hits": 10,
+          "cache_misses": 3,
+          "track_stats": {
+            "tracks_seen": 4,
+            "tracks_skipped_persistent": 1,
+            "tracks_queried": 3,
+            "tracks_matched": 2,
+            "tracks_no_match": 1,
+            "tracks_error": 0
+          }
+        }
       },
       "frames": [
         {
@@ -47,7 +77,31 @@
                 622.89
               ],
               "confidence": 0.8012,
-              "interpolated": true
+              "interpolated": true,
+              "flight_info": {
+                "matched": true,
+                "match_confidence": 0.81,
+                "sample_count": 8,
+                "query_timestamp": "2026-03-28T12:53:09+09:00",
+                "matched_at_track_progress": 0.5,
+                "fr24_id": "39ad4f99",
+                "flight_number": "ANA109",
+                "callsign": "ANA109",
+                "aircraft_type": "B78X",
+                "registration": "JA936A",
+                "airline_icao": "ANA",
+                "origin_iata": "HND",
+                "origin_icao": "RJTT",
+                "destination_iata": "JFK",
+                "destination_icao": "KJFK",
+                "source_timestamp": "2026-03-28T12:53:09+09:00",
+                "source_latitude": 35.562341,
+                "source_longitude": 139.913456,
+                "source_track_degrees": 89,
+                "source_altitude_feet": 4200,
+                "distance_from_camera_km": 11.8,
+                "bearing_from_camera_degrees": 92.4
+              }
             }
           ]
         }
@@ -112,6 +166,9 @@
         },
         "contains_interpolated_detections": {
           "type": "boolean"
+        },
+        "flight_radar_enrichment": {
+          "$ref": "#/$defs/flightRadarEnrichment"
         }
       },
       "examples": [
@@ -122,7 +179,10 @@
           "fps": 29.97002997002997,
           "total_frames": 12663,
           "inference_stride": 1,
-          "contains_interpolated_detections": false
+          "contains_interpolated_detections": false,
+          "flight_radar_enrichment": {
+            "enabled": false
+          }
         },
         {
           "video_name": "airplane-001-7min.mp4",
@@ -136,7 +196,10 @@
           "clip_start_seconds": 59.993,
           "clip_end_seconds": 61.995,
           "inference_stride": 3,
-          "contains_interpolated_detections": true
+          "contains_interpolated_detections": true,
+          "flight_radar_enrichment": {
+            "enabled": false
+          }
         }
       ]
     },
@@ -191,7 +254,31 @@
                 622.89
               ],
               "confidence": 0.8012,
-              "interpolated": false
+              "interpolated": false,
+              "flight_info": {
+                "matched": true,
+                "match_confidence": 0.81,
+                "sample_count": 8,
+                "query_timestamp": "2026-03-28T12:53:09+09:00",
+                "matched_at_track_progress": 0.5,
+                "fr24_id": "39ad4f99",
+                "flight_number": "ANA109",
+                "callsign": "ANA109",
+                "aircraft_type": "B78X",
+                "registration": "JA936A",
+                "airline_icao": "ANA",
+                "origin_iata": "HND",
+                "origin_icao": "RJTT",
+                "destination_iata": "JFK",
+                "destination_icao": "KJFK",
+                "source_timestamp": "2026-03-28T12:53:09+09:00",
+                "source_latitude": 35.562341,
+                "source_longitude": 139.913456,
+                "source_track_degrees": 89,
+                "source_altitude_feet": 4200,
+                "distance_from_camera_km": 11.8,
+                "bearing_from_camera_degrees": 92.4
+              }
             },
             {
               "track_id": 2,
@@ -253,6 +340,9 @@
         },
         "interpolated": {
           "type": "boolean"
+        },
+        "flight_info": {
+          "$ref": "#/$defs/flightInfo"
         }
       },
       "examples": [
@@ -266,9 +356,292 @@
             622.89
           ],
           "confidence": 0.8012,
-          "interpolated": false
+          "interpolated": false,
+          "flight_info": {
+            "matched": true,
+            "match_confidence": 0.81,
+            "sample_count": 8,
+            "query_timestamp": "2026-03-28T12:53:09+09:00",
+            "matched_at_track_progress": 0.5,
+            "fr24_id": "39ad4f99",
+            "flight_number": "ANA109",
+            "callsign": "ANA109",
+            "aircraft_type": "B78X",
+            "registration": "JA936A",
+            "airline_icao": "ANA",
+            "origin_iata": "HND",
+            "origin_icao": "RJTT",
+            "destination_iata": "JFK",
+            "destination_icao": "KJFK",
+            "source_timestamp": "2026-03-28T12:53:09+09:00",
+            "source_latitude": 35.562341,
+            "source_longitude": 139.913456,
+            "source_track_degrees": 89,
+            "source_altitude_feet": 4200,
+            "distance_from_camera_km": 11.8,
+            "bearing_from_camera_degrees": 92.4
+          }
         }
       ]
+    },
+    "flightRadarEnrichment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "strategy": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "matched",
+            "no_matches",
+            "error"
+          ]
+        },
+        "recording_started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "camera_latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "camera_longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "camera_bearing_degrees": {
+          "type": "number"
+        },
+        "camera_horizontal_fov_degrees": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "search_radius_km": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "search_bounds": {
+          "type": "string"
+        },
+        "tracks_seen": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracks_skipped_persistent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracks_queried": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracks_matched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracks_no_match": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracks_error": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "track_stats": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tracks_seen": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tracks_skipped_persistent": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tracks_queried": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tracks_matched": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tracks_no_match": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tracks_error": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "cache_hits": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_misses": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "flightInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matched",
+        "match_confidence",
+        "sample_count"
+      ],
+      "properties": {
+        "matched": {
+          "type": "boolean"
+        },
+        "match_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "query_timestamp": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "matched_at_track_progress": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fr24_id": {
+          "type": "string"
+        },
+        "flight_number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "callsign": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "aircraft_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "registration": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "airline_icao": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "origin_iata": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "origin_icao": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "destination_iata": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "destination_icao": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_timestamp": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "source_latitude": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "source_longitude": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "source_track_degrees": {
+          "type": [
+            "integer",
+            "number",
+            "null"
+          ]
+        },
+        "source_altitude_feet": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "distance_from_camera_km": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "bearing_from_camera_degrees": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
     }
   }
 }

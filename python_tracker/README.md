@@ -67,6 +67,23 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python plane_trac
   --inference-stride 1
 ```
 
+FR24 連携つきで実行:
+
+```bash
+UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python plane_tracker.py \
+  --input airplane-001-7min.mp4 \
+  --output-json output/plane_tracks.fr24.json \
+  --output-video output/plane_debug.fr24.mp4 \
+  --fr24-recording-start "2026-03-28 12:53:05" \
+  --fr24-timezone Asia/Tokyo \
+  --camera-lat 35.55362240541361 \
+  --camera-lon 139.78716594923188 \
+  --camera-bearing 90 \
+  --camera-horizontal-fov 60 \
+  --fr24-search-radius-km 25 \
+  --inference-stride 3
+```
+
 時間範囲を切り出して再出力:
 
 ```bash
@@ -125,5 +142,11 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv sync --dev
 - `unity/` 配下に JSON 取り込み用 C# クラスを置いています
 - `schemas/plane-tracking.schema.json` に出力 JSON の JSON Schema を置いています
 - `.plane_tracker_cache/` に動画 SHA256 ベースの推論キャッシュを保存します
+- FR24 の historical API 応答も `.plane_tracker_cache/fr24/` に保存され、同じ timestamp+bounds の再実行では API quota を再消費しません
+- FR24 の track 調査結果は `.plane_tracker_cache/fr24_tracks/` に保存され、同じ clip / `track_id` / matching 条件の再実行では API を再問い合わせしません
 - キャッシュキーには動画 SHA256、モデル、tracker、conf、`inference_stride` が含まれます
 - `.venv/`、`.uv-cache/`、`.uv-python/` は生成物なので Git には含めません
+- FR24 連携では起動時に `.env` を読み込み、`FLIGHTRADAR24_API_KEY` または `FR24_API_TOKEN` を環境変数として利用します
+- FR24 連携は各 `track_id` の存続区間の中盤だけを調べます。クリップ先頭から末尾まで存在する常在 `track_id` は調査対象から除外します
+- `429 Too Many Requests` を受けた場合は `Retry-After` を優先して待機し、未指定時は指数バックオフで再試行します
+- FR24 連携はカメラの水平 FOV を使って方位と bbox の横位置を照合する近似マッチです。厳密な三次元再投影ではありません
