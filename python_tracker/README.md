@@ -1,7 +1,7 @@
 # python_tracker
 
 `uv` で管理する Python 開発環境です。  
-このリポジトリでは Python 本体、仮想環境、依存ロックを `uv` でまとめて管理します。
+このリポジトリでは、動画から飛行機を検出・追跡し、Unity 連携用 JSON とデバッグ動画を生成します。
 
 ## 前提
 
@@ -54,22 +54,21 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run ruff check .
 UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run pytest
 ```
 
+トラッキング実行:
+
+```bash
+UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python plane_tracker.py \
+  --input input.mp4 \
+  --output-json output/plane_tracks.json \
+  --output-video output/plane_debug.mp4 \
+  --conf 0.25 \
+  --device cpu
+```
+
 仮想環境の Python 実行:
 
 ```bash
 UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python
-```
-
-パッケージ追加:
-
-```bash
-UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv add requests
-```
-
-開発用パッケージ追加:
-
-```bash
-UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv add --dev ipython
 ```
 
 依存更新:
@@ -84,15 +83,18 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv sync --dev
 ```text
 .
 ├── pyproject.toml
+├── plane_tracker.py
 ├── uv.lock
 ├── .python-version
 ├── src/
 │   └── python_tracker/
-└── tests/
+├── tests/
+└── unity/
 ```
 
 ## 補足
 
 - `src/` 配下がアプリケーションコードです
 - `tests/` 配下に `pytest` のテストを置きます
+- `unity/` 配下に JSON 取り込み用 C# クラスを置いています
 - `.venv/`、`.uv-cache/`、`.uv-python/` は生成物なので Git には含めません
