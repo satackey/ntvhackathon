@@ -81,6 +81,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Ignore existing cache and recompute tracking results.",
     )
+    parser.add_argument(
+        "--inference-stride",
+        type=int,
+        default=1,
+        help="Run detection/tracking every N frames and interpolate between keyframes. Default: 1.",
+    )
     return parser.parse_args()
 
 
@@ -140,13 +146,14 @@ def build_cache_paths(
     model: str,
     tracker: str,
     conf: float,
+    inference_stride: int,
 ) -> tuple[str, Path]:
     video_sha = compute_file_sha256(input_path)
     model_token = sanitize_cache_token(Path(model).name)
     tracker_token = sanitize_cache_token(Path(tracker).name)
     conf_token = f"{conf:.3f}".replace(".", "_")
     cache_key = (
-        f"{video_sha[:16]}_{model_token}_{tracker_token}_airplane_conf-{conf_token}"
+        f"{video_sha[:16]}_{model_token}_{tracker_token}_airplane_conf-{conf_token}_stride-{inference_stride}"
     )
     return cache_key, cache_dir / f"{cache_key}.json"
 
@@ -203,16 +210,22 @@ def build_output_metadata(
     source_metadata: dict[str, Any],
     start_frame: int,
     end_frame: int,
+    inference_stride: int,
 ) -> dict[str, Any]:
     fps = source_metadata["fps"]
     return {
-        **source_metadata,
+        "video_name": source_metadata["video_name"],
+        "width": source_metadata["width"],
+        "height": source_metadata["height"],
+        "fps": source_metadata["fps"],
         "source_total_frames": source_metadata["total_frames"],
         "total_frames": end_frame - start_frame,
         "clip_start_frame": start_frame,
         "clip_end_frame": end_frame,
         "clip_start_seconds": round(start_frame / fps, 3) if fps > 0 else 0.0,
         "clip_end_seconds": round(end_frame / fps, 3) if fps > 0 else 0.0,
+        "inference_stride": inference_stride,
+        "contains_interpolated_detections": inference_stride > 1,
     }
 
 
@@ -249,6 +262,7 @@ def extract_detections(result: Any) -> list[dict[str, Any]]:
                 "label": AIRPLANE_LABEL,
                 "bbox": [round(float(value), 2) for value in bbox],
                 "confidence": round(float(confidence), 4),
+                "interpolated": False,
             }
         )
 
@@ -286,6 +300,92 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def clone_detection(detection: dict[str, Any], *, interpolated: bool) -> dict[str, Any]:
+    return {
+        "track_id": detection["track_id"],
+        "label": detection["label"],
+        "bbox": [round(float(value), 2) for value in detection["bbox"]],
+        "confidence": round(float(detection["confidence"]), 4),
+        "interpolated": interpolated,
+    }
+
+
+def interpolate_detection(
+    start_detection: dict[str, Any],
+    end_detection: dict[str, Any],
+    ratio: float,
+) -> dict[str, Any]:
+    start_bbox = start_detection["bbox"]
+    end_bbox = end_detection["bbox"]
+    bbox = [
+        round(start_value + (end_value - start_value) * ratio, 2)
+        for start_value, end_value in zip(start_bbox, end_bbox, strict=True)
+    ]
+    confidence = round(
+        start_detection["confidence"]
+        + (end_detection["confidence"] - start_detection["confidence"]) * ratio,
+        4,
+    )
+    return {
+        "track_id": start_detection["track_id"],
+        "label": start_detection["label"],
+        "bbox": bbox,
+        "confidence": confidence,
+        "interpolated": True,
+    }
+
+
+def build_output_frames(
+    keyframes: list[dict[str, Any]],
+    fps: float,
+    start_frame: int,
+    end_frame: int,
+) -> list[dict[str, Any]]:
+    frame_payloads: dict[int, dict[str, Any]] = {
+        frame_index: build_frame_payload(frame_index, fps, [])
+        for frame_index in range(start_frame, end_frame)
+    }
+
+    for keyframe in keyframes:
+        frame_index = keyframe["frame_index"]
+        if start_frame <= frame_index < end_frame:
+            frame_payloads[frame_index]["detections"] = [
+                clone_detection(detection, interpolated=False)
+                for detection in keyframe["detections"]
+            ]
+
+    for current_keyframe, next_keyframe in zip(keyframes, keyframes[1:], strict=False):
+        current_index = current_keyframe["frame_index"]
+        next_index = next_keyframe["frame_index"]
+        gap = next_index - current_index
+        if gap <= 1:
+            continue
+
+        current_by_id = {
+            detection["track_id"]: detection for detection in current_keyframe["detections"]
+        }
+        next_by_id = {
+            detection["track_id"]: detection for detection in next_keyframe["detections"]
+        }
+        shared_ids = sorted(set(current_by_id) & set(next_by_id))
+        for frame_index in range(max(start_frame, current_index + 1), min(end_frame, next_index)):
+            ratio = (frame_index - current_index) / gap
+            frame_detections = frame_payloads[frame_index]["detections"]
+            for track_id in shared_ids:
+                frame_detections.append(
+                    interpolate_detection(
+                        current_by_id[track_id],
+                        next_by_id[track_id],
+                        ratio,
+                    )
+                )
+
+    for frame_payload in frame_payloads.values():
+        frame_payload["detections"].sort(key=lambda item: item["track_id"])
+
+    return [frame_payloads[frame_index] for frame_index in range(start_frame, end_frame)]
+
+
 def compute_tracking_cache(
     input_path: Path,
     model_path: str,
@@ -293,13 +393,14 @@ def compute_tracking_cache(
     conf: float,
     device: str | None,
     cache_path: Path,
+    inference_stride: int,
 ) -> dict[str, Any]:
     from ultralytics import YOLO
 
     capture = open_video_capture(input_path)
     metadata = build_metadata(input_path, capture)
     model = YOLO(model_path)
-    frames: list[dict[str, Any]] = []
+    keyframes: list[dict[str, Any]] = []
     processed_frames = 0
     progress_total = metadata["total_frames"] or None
 
@@ -310,17 +411,21 @@ def compute_tracking_cache(
                 if not ok:
                     break
 
-                results = model.track(
-                    frame,
-                    persist=True,
-                    classes=[AIRPLANE_CLASS_ID],
-                    conf=conf,
-                    device=device,
-                    tracker=tracker,
-                    verbose=False,
-                )
-                detections = extract_detections(results[0])
-                frames.append(build_frame_payload(processed_frames, metadata["fps"], detections))
+                is_last_frame = processed_frames == metadata["total_frames"] - 1
+                if processed_frames % inference_stride == 0 or is_last_frame:
+                    results = model.track(
+                        frame,
+                        persist=True,
+                        classes=[AIRPLANE_CLASS_ID],
+                        conf=conf,
+                        device=device,
+                        tracker=tracker,
+                        verbose=False,
+                    )
+                    detections = extract_detections(results[0])
+                    keyframes.append(
+                        build_frame_payload(processed_frames, metadata["fps"], detections)
+                    )
 
                 processed_frames += 1
                 progress.update(1)
@@ -328,7 +433,14 @@ def compute_tracking_cache(
         capture.release()
 
     metadata["total_frames"] = processed_frames
-    payload = {"metadata": metadata, "frames": frames}
+    payload = {
+        "cache_metadata": {
+            "cache_format_version": 2,
+            "inference_stride": inference_stride,
+        },
+        "metadata": metadata,
+        "keyframes": keyframes,
+    }
     write_json(cache_path, payload)
     return payload
 
@@ -340,6 +452,7 @@ def get_tracking_cache(args: argparse.Namespace) -> tuple[str, Path, dict[str, A
         args.model,
         args.tracker,
         args.conf,
+        args.inference_stride,
     )
     if cache_path.exists() and not args.force_recompute:
         return cache_key, cache_path, load_json(cache_path)
@@ -352,6 +465,7 @@ def get_tracking_cache(args: argparse.Namespace) -> tuple[str, Path, dict[str, A
         args.conf,
         args.device,
         cache_path,
+        args.inference_stride,
     )
     return cache_key, cache_path, payload
 
@@ -362,7 +476,6 @@ def render_clip_from_cache(
     metadata: dict[str, Any],
     frames: list[dict[str, Any]],
     start_frame: int,
-    end_frame: int,
 ) -> None:
     capture = open_video_capture(input_path)
     writer = create_video_writer(
@@ -397,6 +510,8 @@ def run_tracking(args: argparse.Namespace) -> None:
         raise FileNotFoundError(f"Input video not found: {args.input}")
     if args.input.suffix.lower() != ".mp4":
         raise ValueError("Only local .mp4 files are supported.")
+    if args.inference_stride < 1:
+        raise ValueError("--inference-stride must be greater than or equal to 1.")
     _, _, cache_payload = get_tracking_cache(args)
     source_metadata = cache_payload["metadata"]
     start_frame, end_frame = resolve_frame_range(
@@ -405,9 +520,19 @@ def run_tracking(args: argparse.Namespace) -> None:
         args.start_time,
         args.end_time,
     )
-    clip_frames = cache_payload["frames"][start_frame:end_frame]
+    clip_frames = build_output_frames(
+        cache_payload["keyframes"],
+        source_metadata["fps"],
+        start_frame,
+        end_frame,
+    )
     output_payload = {
-        "metadata": build_output_metadata(source_metadata, start_frame, end_frame),
+        "metadata": build_output_metadata(
+            source_metadata,
+            start_frame,
+            end_frame,
+            args.inference_stride,
+        ),
         "frames": clip_frames,
     }
 
@@ -417,7 +542,6 @@ def run_tracking(args: argparse.Namespace) -> None:
         source_metadata,
         clip_frames,
         start_frame,
-        end_frame,
     )
     write_json(args.output_json, output_payload)
 

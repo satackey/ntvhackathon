@@ -6,9 +6,12 @@ from plane_tracker import (
     AIRPLANE_CLASS_ID,
     AIRPLANE_LABEL,
     build_frame_payload,
+    build_output_frames,
     build_output_metadata,
+    clone_detection,
     extract_detections,
     format_timecode,
+    interpolate_detection,
     resolve_frame_range,
 )
 
@@ -46,6 +49,7 @@ def test_extract_detections_returns_tracked_airplanes_only() -> None:
             "label": AIRPLANE_LABEL,
             "bbox": [10.12, 20.46, 30.79, 40.99],
             "confidence": 0.9234,
+            "interpolated": False,
         }
     ]
 
@@ -95,6 +99,7 @@ def test_build_output_metadata_adds_clip_information() -> None:
         },
         30,
         105,
+        3,
     )
 
     assert metadata["total_frames"] == 75
@@ -103,3 +108,82 @@ def test_build_output_metadata_adds_clip_information() -> None:
     assert metadata["clip_end_frame"] == 105
     assert metadata["clip_start_seconds"] == 1.0
     assert metadata["clip_end_seconds"] == 3.5
+    assert metadata["inference_stride"] == 3
+    assert metadata["contains_interpolated_detections"] is True
+
+
+def test_interpolate_detection_marks_output_as_interpolated() -> None:
+    detection = interpolate_detection(
+        {
+            "track_id": 1,
+            "label": AIRPLANE_LABEL,
+            "bbox": [0.0, 0.0, 10.0, 10.0],
+            "confidence": 0.2,
+            "interpolated": False,
+        },
+        {
+            "track_id": 1,
+            "label": AIRPLANE_LABEL,
+            "bbox": [10.0, 10.0, 20.0, 20.0],
+            "confidence": 0.6,
+            "interpolated": False,
+        },
+        0.5,
+    )
+
+    assert detection == {
+        "track_id": 1,
+        "label": AIRPLANE_LABEL,
+        "bbox": [5.0, 5.0, 15.0, 15.0],
+        "confidence": 0.4,
+        "interpolated": True,
+    }
+
+
+def test_build_output_frames_interpolates_between_keyframes() -> None:
+    keyframes = [
+        build_frame_payload(
+            0,
+            30.0,
+            [
+                {
+                    "track_id": 1,
+                    "label": AIRPLANE_LABEL,
+                    "bbox": [0.0, 0.0, 10.0, 10.0],
+                    "confidence": 0.2,
+                    "interpolated": False,
+                }
+            ],
+        ),
+        build_frame_payload(
+            2,
+            30.0,
+            [
+                {
+                    "track_id": 1,
+                    "label": AIRPLANE_LABEL,
+                    "bbox": [10.0, 10.0, 20.0, 20.0],
+                    "confidence": 0.6,
+                    "interpolated": False,
+                }
+            ],
+        ),
+    ]
+
+    frames = build_output_frames(keyframes, 30.0, 0, 3)
+
+    assert frames[0]["detections"] == [
+        clone_detection(keyframes[0]["detections"][0], interpolated=False)
+    ]
+    assert frames[1]["detections"] == [
+        {
+            "track_id": 1,
+            "label": AIRPLANE_LABEL,
+            "bbox": [5.0, 5.0, 15.0, 15.0],
+            "confidence": 0.4,
+            "interpolated": True,
+        }
+    ]
+    assert frames[2]["detections"] == [
+        clone_detection(keyframes[1]["detections"][0], interpolated=False)
+    ]

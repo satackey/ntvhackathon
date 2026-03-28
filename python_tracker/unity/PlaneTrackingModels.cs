@@ -9,6 +9,13 @@ public class PlaneTrackingMetadata
     public int height;
     public float fps;
     public int total_frames;
+    public int source_total_frames;
+    public int clip_start_frame;
+    public int clip_end_frame;
+    public float clip_start_seconds;
+    public float clip_end_seconds;
+    public int inference_stride;
+    public bool contains_interpolated_detections;
 }
 
 [Serializable]
@@ -18,6 +25,7 @@ public class PlaneDetection
     public string label;
     public float[] bbox;
     public float confidence;
+    public bool interpolated;
 }
 
 [Serializable]

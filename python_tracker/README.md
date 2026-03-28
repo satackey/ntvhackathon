@@ -2,6 +2,7 @@
 
 `uv` で管理する Python 開発環境です。  
 このリポジトリでは、動画から飛行機を検出・追跡し、Unity 連携用 JSON とデバッグ動画を生成します。推論結果は動画ごとにキャッシュされ、スキーマ変更時の再出力や時間範囲切り出しを高速に行えます。
+また、`--inference-stride` により推論を間引き、間のフレームは bbox を線形補間して負荷を下げられます。
 
 ## 前提
 
@@ -62,7 +63,8 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python plane_trac
   --output-json output/plane_tracks.json \
   --output-video output/plane_debug.mp4 \
   --conf 0.25 \
-  --device cpu
+  --device cpu \
+  --inference-stride 1
 ```
 
 時間範囲を切り出して再出力:
@@ -75,7 +77,8 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python plane_trac
   --start-time 60 \
   --end-time 90 \
   --conf 0.25 \
-  --device cpu
+  --device cpu \
+  --inference-stride 3
 ```
 
 キャッシュを無視して再計算:
@@ -120,5 +123,7 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv sync --dev
 - `src/` 配下がアプリケーションコードです
 - `tests/` 配下に `pytest` のテストを置きます
 - `unity/` 配下に JSON 取り込み用 C# クラスを置いています
+- `schemas/plane-tracking.schema.json` に出力 JSON の JSON Schema を置いています
 - `.plane_tracker_cache/` に動画 SHA256 ベースの推論キャッシュを保存します
+- キャッシュキーには動画 SHA256、モデル、tracker、conf、`inference_stride` が含まれます
 - `.venv/`、`.uv-cache/`、`.uv-python/` は生成物なので Git には含めません

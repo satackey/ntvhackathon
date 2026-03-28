@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/plane-tracking.schema.json",
+  "title": "Plane Tracking Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "metadata",
+    "frames"
+  ],
+  "properties": {
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "frames": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/frame"
+      }
+    }
+  },
+  "examples": [
+    {
+      "metadata": {
+        "video_name": "airplane-001-7min.mp4",
+        "width": 1920,
+        "height": 1080,
+        "fps": 29.97002997002997,
+        "total_frames": 12663,
+        "inference_stride": 3,
+        "contains_interpolated_detections": true
+      },
+      "frames": [
+        {
+          "frame_index": 120,
+          "time_seconds": 4.004,
+          "time_ms": 4004,
+          "timecode": "00:00:04.004",
+          "detections": [
+            {
+              "track_id": 1,
+              "label": "airplane",
+              "bbox": [
+                1017.46,
+                417.31,
+                1776.18,
+                622.89
+              ],
+              "confidence": 0.8012,
+              "interpolated": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "video_name",
+        "width",
+        "height",
+        "fps",
+        "total_frames"
+      ],
+      "properties": {
+        "video_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "total_frames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_total_frames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clip_start_frame": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clip_end_frame": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clip_start_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "clip_end_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "inference_stride": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "contains_interpolated_detections": {
+          "type": "boolean"
+        }
+      },
+      "examples": [
+        {
+          "video_name": "airplane-001-7min.mp4",
+          "width": 1920,
+          "height": 1080,
+          "fps": 29.97002997002997,
+          "total_frames": 12663,
+          "inference_stride": 1,
+          "contains_interpolated_detections": false
+        },
+        {
+          "video_name": "airplane-001-7min.mp4",
+          "width": 1920,
+          "height": 1080,
+          "fps": 29.97002997002997,
+          "total_frames": 60,
+          "source_total_frames": 12663,
+          "clip_start_frame": 1798,
+          "clip_end_frame": 1858,
+          "clip_start_seconds": 59.993,
+          "clip_end_seconds": 61.995,
+          "inference_stride": 3,
+          "contains_interpolated_detections": true
+        }
+      ]
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_index",
+        "time_seconds",
+        "time_ms",
+        "timecode",
+        "detections"
+      ],
+      "properties": {
+        "frame_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "time_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "time_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timecode": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$"
+        },
+        "detections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/detection"
+          }
+        }
+      },
+      "examples": [
+        {
+          "frame_index": 120,
+          "time_seconds": 4.004,
+          "time_ms": 4004,
+          "timecode": "00:00:04.004",
+          "detections": [
+            {
+              "track_id": 1,
+              "label": "airplane",
+              "bbox": [
+                1017.46,
+                417.31,
+                1776.18,
+                622.89
+              ],
+              "confidence": 0.8012,
+              "interpolated": false
+            },
+            {
+              "track_id": 2,
+              "label": "airplane",
+              "bbox": [
+                1587.47,
+                404.31,
+                1914.98,
+                521.83
+              ],
+              "confidence": 0.5716,
+              "interpolated": true
+            }
+          ]
+        }
+      ]
+    },
+    "detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "track_id",
+        "label",
+        "bbox",
+        "confidence"
+      ],
+      "properties": {
+        "track_id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string",
+          "const": "airplane"
+        },
+        "bbox": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "interpolated": {
+          "type": "boolean"
+        }
+      },
+      "examples": [
+        {
+          "track_id": 1,
+          "label": "airplane",
+          "bbox": [
+            1017.46,
+            417.31,
+            1776.18,
+            622.89
+          ],
+          "confidence": 0.8012,
+          "interpolated": false
+        }
+      ]
+    }
+  }
+}
