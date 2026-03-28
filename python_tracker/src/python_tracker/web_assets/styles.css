@@ -1,0 +1,248 @@
+:root {
+  color-scheme: light;
+  --bg: #dce7ee;
+  --panel: rgba(255, 255, 255, 0.9);
+  --ink: #12212a;
+  --muted: #4c6672;
+  --accent: #0a87a8;
+  --accent-soft: #c7edf5;
+  --line: rgba(18, 33, 42, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(10, 135, 168, 0.18), transparent 22%),
+    linear-gradient(180deg, #f8fbfd 0%, var(--bg) 100%);
+}
+
+button,
+input,
+select,
+table {
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 16px;
+  height: 100vh;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.video-pane,
+.map-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-header,
+.control-grid,
+.info-columns > section,
+.map-overlay,
+.cache-table,
+.video-stage,
+.video-toolbar {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 40px rgba(18, 33, 42, 0.08);
+}
+
+.panel-header,
+.video-toolbar,
+.control-grid,
+.map-overlay {
+  padding: 12px 14px;
+}
+
+.panel-header,
+.button-row,
+.video-toolbar,
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.panel-header h1,
+.info-columns h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.video-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto minmax(120px, 180px) auto;
+}
+
+.video-stage {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: 48vh;
+  background: #091016;
+}
+
+#frame-image,
+#overlay-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#overlay-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.control-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.control-grid input,
+.video-toolbar select,
+.video-toolbar input,
+button {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  background: white;
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(180deg, #ffffff 0%, #edf8fb 100%);
+}
+
+button:hover {
+  border-color: rgba(10, 135, 168, 0.5);
+}
+
+.info-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.info-columns > section {
+  padding: 12px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.table-container {
+  overflow: auto;
+  min-height: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+th,
+td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+tbody tr:hover {
+  background: var(--accent-soft);
+}
+
+tbody tr.selected {
+  background: rgba(10, 135, 168, 0.18);
+}
+
+.summary-box {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+#cesium-container {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 360px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 40px rgba(18, 33, 42, 0.08);
+}
+
+.map-overlay {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.legend {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.cache-table {
+  padding: 12px;
+  flex: 0 0 220px;
+  min-height: 0;
+}
+
+#status-line {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (max-width: 1200px) {
+  .app-shell,
+  .info-columns,
+  .map-overlay,
+  .control-grid,
+  .video-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  body,
+  .app-shell {
+    height: auto;
+    overflow: auto;
+  }
+}

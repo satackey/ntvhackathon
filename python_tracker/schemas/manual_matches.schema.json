@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/manual_matches.schema.json",
+  "title": "Manual Matches",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "matches"
+  ],
+  "properties": {
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "track_id",
+          "icao24"
+        ],
+        "properties": {
+          "track_id": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "icao24": {
+            "type": "string",
+            "minLength": 1
+          },
+          "callsign": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@
 `uv` で管理する Python 開発環境です。  
 このリポジトリでは、動画から飛行機を検出・追跡し、Unity 連携用 JSON とデバッグ動画を生成します。推論結果は動画ごとにキャッシュされ、スキーマ変更時の再出力や時間範囲切り出しを高速に行えます。
 また、`--inference-stride` により推論を間引き、間のフレームは bbox を線形補間して負荷を下げられます。
+加えて、`streamlit + plotly + opencv` ベースの手動キャリブレーション GUI で、tracking JSON と OpenSky キャッシュを重ねてカメラ姿勢・位置・時刻オフセットを調整できます。
 
 ## 前提
 
@@ -97,6 +98,31 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python plane_trac
 UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python
 ```
 
+Cesium ベースの OpenSky キャリブレーション Web アプリ:
+
+```bash
+UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv run python \
+  cesium_opensky_calibration.py \
+  --video airplane-001-7min.mp4 \
+  --tracking-json output/airplane-001-7min.json \
+  --opensky-cache output/opensky_cache.json \
+  --opensky-credentials-json '/Users/.../credentials.json' \
+  --camera-config output/camera_config.json \
+  --manual-matches output/manual_matches.json \
+  --host 127.0.0.1 \
+  --port 8765
+```
+
+補足:
+
+- `camera_config.json` がなければ初期位置 `35.55362508260334, 139.7871835937992` を使います
+- 既定の初期姿勢は東向き (`azimuth_deg=90`) です
+- ブラウザ側では Cesium 地球ビュー上でカメラ位置マーカーを D&D でき、`Alt + drag` で heading / tilt、`Shift + Alt + drag` で roll / FOV を調整できます
+- OpenSky はローカル `opensky_cache.json` を優先し、`Fetch OpenSky for current view` を押した時だけ不足区間を追記取得します
+- OpenSky 認証は `--opensky-credentials-json`、`--opensky-client-id` + `--opensky-client-secret`、または `--opensky-access-token` を CLI から渡します
+- Web UI 内で current OpenSky states、selected aircraft details、track path、cache overview を確認できます
+- 旧 `streamlit_opensky_calibration.py` は参考実装として残しています
+
 依存更新:
 
 ```bash
@@ -124,6 +150,8 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv sync --dev
 - `tests/` 配下に `pytest` のテストを置きます
 - `unity/` 配下に JSON 取り込み用 C# クラスを置いています
 - `schemas/plane-tracking.schema.json` に出力 JSON の JSON Schema を置いています
+- `schemas/camera_config.schema.json`、`schemas/manual_matches.schema.json`、`schemas/with_flight_info.schema.json` に追加出力の Schema を置いています
 - `.plane_tracker_cache/` に動画 SHA256 ベースの推論キャッシュを保存します
+- `streamlit_opensky_calibration.py` が Streamlit GUI のエントリポイントです
 - キャッシュキーには動画 SHA256、モデル、tracker、conf、`inference_stride` が含まれます
 - `.venv/`、`.uv-cache/`、`.uv-python/` は生成物なので Git には含めません

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/camera_config.schema.json",
+  "title": "Camera Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "camera_name",
+    "video_name",
+    "initial_guess",
+    "lat",
+    "lon",
+    "elevation_m",
+    "azimuth_deg",
+    "tilt_deg",
+    "roll_deg",
+    "hfov_deg",
+    "vfov_deg",
+    "time_offset_sec"
+  ],
+  "properties": {
+    "camera_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "video_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "initial_guess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      }
+    },
+    "reference_time_utc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T.*Z$"
+    },
+    "lat": {
+      "type": "number",
+      "minimum": 35.50362508260334,
+      "maximum": 35.60362508260334
+    },
+    "lon": {
+      "type": "number",
+      "minimum": 139.7371835937992,
+      "maximum": 139.8371835937992
+    },
+    "elevation_m": {
+      "type": "number"
+    },
+    "azimuth_deg": {
+      "type": "number"
+    },
+    "tilt_deg": {
+      "type": "number"
+    },
+    "roll_deg": {
+      "type": "number"
+    },
+    "hfov_deg": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "vfov_deg": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "time_offset_sec": {
+      "type": "number"
+    }
+  }
+}
