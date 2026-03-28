@@ -10,9 +10,13 @@ namespace Game
     {
         [SerializeField] private PlayableDirector _faceRightPlayableDirector;
         [SerializeField] private PlayableDirector _beforeInventoryPlayableDirector;
+        [SerializeField] private PlayableDirector _resetPlayableDirector;
         [SerializeField] private Transform _planeRoot;
         [SerializeField] private Transform _beforeInventoryStartMarker;
         [SerializeField] private InventoryView _inventoryView;
+        [SerializeField] private InventoryViewCell _inventoryViewCell;
+        [SerializeField] private GameObject _planePrefab;
+        [SerializeField] private Transform _planeParent;
             
         private Animator _planeAnimator;
         private bool _isPlaying;
@@ -52,6 +56,9 @@ namespace Game
             _isPlaying = true;
             var ct = this.GetCancellationTokenOnDestroy();
 
+            // Spawn the plane prefab under _planeParent
+            var spawnedPlane = Instantiate(_planePrefab, _planeParent);
+
             try
             {
                 SetLayerRecursively(_planeRoot.gameObject, LayerMask.NameToLayer("Default"));
@@ -80,8 +87,19 @@ namespace Game
                 await _beforeInventoryPlayableDirector.PlayAsync(ct);
 
                 _beforeInventoryPlayableDirector.gameObject.SetActive(false);
-
+                
+                await WaitForClickAsync(ct);
+                
                 SetLayerRecursively(_planeRoot.gameObject, LayerMask.NameToLayer("UI"));
+                
+                // Unparent the spawned plane and animate it into the inventory view cell
+                spawnedPlane.transform.SetParent(null);
+                await _inventoryViewCell.SetItemAsync(spawnedPlane.transform, ct);
+                
+                _inventoryView.Close();
+                
+                await _resetPlayableDirector.PlayAsync(ct);
+                _resetPlayableDirector.gameObject.SetActive(false);
             }
             finally
             {
