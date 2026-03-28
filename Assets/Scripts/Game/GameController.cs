@@ -14,8 +14,9 @@ namespace Game
         [SerializeField] private Transform _planeRoot;
         [SerializeField] private Transform _beforeInventoryStartMarker;
         [SerializeField] private InventoryView _inventoryView;
-        [SerializeField] private InventoryViewCell _inventoryViewCell;
-        [SerializeField] private GameObject _planePrefab;
+        [SerializeField] private PlanePrefabRegistry _planePrefabRegistry;
+        [SerializeField] private PlayerInventory _playerInventory;
+        [SerializeField] private PlaneId _planeId;
         [SerializeField] private Transform _planeParent;
             
         private Animator _planeAnimator;
@@ -57,10 +58,19 @@ namespace Game
             var ct = this.GetCancellationTokenOnDestroy();
 
             // Spawn the plane prefab under _planeParent
-            var spawnedPlane = Instantiate(_planePrefab, _planeParent);
+            var planePrefab = _planePrefabRegistry.GetPrefab(_planeId);
+            if (planePrefab == null)
+            {
+                Debug.LogError($"[GameController] No plane prefab found for id \"{_planeId}\".");
+                _isPlaying = false;
+                return;
+            }
+            var spawnedPlane = Instantiate(planePrefab, _planeParent);
 
             try
             {
+                // Ensure the cell for this plane exists before opening (count 0 until fly-in)
+                var cell = _inventoryView.GetOrCreateCell(_planeId, 0);
                 SetLayerRecursively(_planeRoot.gameObject, LayerMask.NameToLayer("Default"));
 
                 _faceRightPlayableDirector.Reset();
@@ -83,6 +93,7 @@ namespace Game
                 _faceRightPlayableDirector.gameObject.SetActive(false);
 
                 await WaitForClickAsync(ct);
+
                 _inventoryView.Open();
                 await _beforeInventoryPlayableDirector.PlayAsync(ct);
 
@@ -94,8 +105,12 @@ namespace Game
                 
                 // Unparent the spawned plane and animate it into the inventory view cell
                 spawnedPlane.transform.SetParent(null);
-                await _inventoryViewCell.SetItemAsync(spawnedPlane.transform, ct);
-                
+                await cell.AddItemAsync(spawnedPlane.transform, ct);
+
+                // Add the plane to the player's inventory and update the cell count
+                _playerInventory.Add(_planeId);
+                cell.UpdateCount(_playerInventory.GetCount(_planeId));
+                await UniTask.Delay(300, cancellationToken: ct); // Wait a moment before closing the inventory view
                 _inventoryView.Close();
                 
                 await _resetPlayableDirector.PlayAsync(ct);

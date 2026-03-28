@@ -206,7 +206,42 @@ MonoBehaviour:
   _itemDistance: 50
   _itemScale: 0.2
   _itemOffset: {x: 0, y: -1.5, z: 0}
-  _currentItem: {fileID: 0}
+  _itemRotation: {x: -29.987, y: -22.6, z: 37.33}
+  _animationDuration: 0.5
+  _animationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.8
+      value: 1.04
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.9970398
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.06571356
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _itemCountText: {fileID: 3512227499151032269}
 --- !u!1 &8296809988955701721
 GameObject:
   m_ObjectHideFlags: 0

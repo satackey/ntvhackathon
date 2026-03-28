@@ -1,12 +1,14 @@
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 
 namespace Game
 {
     /// <summary>
-    /// UI cell that positions a 3D item in world space so it appears centered
-    /// within this cell, even though the UI camera and 3D camera are different.
+    /// UI cell that positions one or more 3D items in world space so they appear
+    /// centered within this cell, even though the UI camera and 3D camera are different.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class InventoryViewCell : MonoBehaviour
@@ -26,6 +28,9 @@ namespace Game
         [Tooltip("World-space offset applied to the item after positioning.")]
         [SerializeField] private Vector3 _itemOffset = Vector3.zero;
 
+        [Tooltip("Initial rotation applied to items when placed in this cell.")]
+        [SerializeField] private Vector3 _itemRotation = Vector3.zero;
+
         [Header("Animation")]
         [Tooltip("Duration in seconds for the SetItemAsync lerp animation.")]
         [SerializeField] private float _animationDuration = 0.5f;
@@ -37,8 +42,44 @@ namespace Game
         );
 
         private RectTransform _rectTransform;
-        [SerializeField] private Transform _currentItem;
+        private readonly List<Transform> _items = new List<Transform>();
+        
+        [SerializeField] private TMP_Text _itemCountText;
         private bool _isAnimating;
+
+        /// <summary>The plane id this cell is showing.</summary>
+        public PlaneId PlaneId { get; private set; }
+
+        /// <summary>How many items this cell currently holds.</summary>
+        public int ItemCount => _items.Count;
+
+        /// <summary>
+        /// Initialize the cell for a specific plane id and count.
+        /// </summary>
+        public void Setup(PlaneId planeId, int count)
+        {
+            PlaneId = planeId;
+            UpdateCount(count);
+        }
+
+        /// <summary>
+        /// Inject camera references. Call this right after Instantiate
+        /// when the cameras aren't baked into the prefab.
+        /// </summary>
+        public void Init(Camera uiCamera, Camera worldCamera = null)
+        {
+            _uiCamera = uiCamera;
+            _worldCamera = worldCamera != null ? worldCamera : uiCamera;
+        }
+
+        /// <summary>
+        /// Update the displayed count text.
+        /// </summary>
+        public void UpdateCount(int count)
+        {
+            if (_itemCountText != null)
+                _itemCountText.text = count.ToString();
+        }
 
         private void Awake()
         {
@@ -48,46 +89,42 @@ namespace Game
         }
 
         /// <summary>
-        /// Assign a 3D item to this cell.  The item will be repositioned every
+        /// Add a 3D item to this cell. The item will be repositioned every
         /// frame so that it stays visually centered on the cell.
+        /// All items remain active.
         /// </summary>
-        public void SetItem(Transform item)
+        public void AddItem(Transform item)
         {
-            if (_currentItem != null)
-            {
-                _currentItem.gameObject.SetActive(false);
-            }
 
-            _currentItem = item;
-
-            if (_currentItem != null)
-            {
-                _currentItem.gameObject.SetActive(true);
-                UpdateItemPosition();
-            }
+            _items.Add(item);
+            item.gameObject.SetActive(true);
+            item.rotation = Quaternion.Euler(_itemRotation);
+            UpdateItemPosition(item);
         }
 
         /// <summary>
-        /// Assign a 3D item to this cell with an animated lerp from its current
-        /// position to the cell target. Uses <see cref="_animationCurve"/> and
-        /// <see cref="_animationDuration"/>. The curve may overshoot (values &gt; 1).
+        /// Convenience overload – replaces all items with a single one.
         /// </summary>
-        public async UniTask SetItemAsync(Transform item, CancellationToken ct = default)
+        public void SetItem(Transform item)
         {
-            if (_currentItem != null)
-            {
-                _currentItem.gameObject.SetActive(false);
-            }
+            ClearItems();
+            AddItem(item);
+        }
 
-            _currentItem = item;
+        /// <summary>
+        /// Add a 3D item to this cell with an animated lerp from its current
+        /// position to the cell target.
+        /// </summary>
+        public async UniTask AddItemAsync(Transform item, CancellationToken ct = default)
+        {
 
-            if (_currentItem == null)
-                return;
+            _items.Add(item);
+            item.gameObject.SetActive(true);
 
-            _currentItem.gameObject.SetActive(true);
-
-            Vector3 startPosition = _currentItem.position;
-            Vector3 startScale = _currentItem.localScale;
+            Vector3 startPosition = item.position;
+            Quaternion startRotation = item.rotation;
+            Quaternion targetRotation = Quaternion.Euler(_itemRotation);
+            Vector3 startScale = item.localScale;
             Vector3 targetScale = Vector3.one * _itemScale;
 
             _isAnimating = true;
@@ -102,33 +139,64 @@ namespace Game
                 float curveValue = _animationCurve.Evaluate(t);
 
                 Vector3 targetPosition = GetCellWorldPosition();
-                _currentItem.position = Vector3.LerpUnclamped(startPosition, targetPosition, curveValue);
-                _currentItem.localScale = Vector3.LerpUnclamped(startScale, targetScale, curveValue);
+                item.position = Vector3.LerpUnclamped(startPosition, targetPosition, curveValue);
+                item.rotation = Quaternion.LerpUnclamped(startRotation, targetRotation, curveValue);
+                item.localScale = Vector3.LerpUnclamped(startScale, targetScale, curveValue);
 
                 await UniTask.Yield(PlayerLoopTiming.PostLateUpdate, ct);
             }
 
             _isAnimating = false;
-            UpdateItemPosition();
+            UpdateItemPosition(item);
         }
 
         /// <summary>
-        /// Remove the current item from this cell (hides it).
+        /// Convenience overload – replaces all items with a single one, animated.
         /// </summary>
-        public void ClearItem()
+        public async UniTask SetItemAsync(Transform item, CancellationToken ct = default)
         {
-            if (_currentItem != null)
-            {
-                _currentItem.gameObject.SetActive(false);
-                _currentItem = null;
-            }
+            ClearItems();
+            await AddItemAsync(item, ct);
         }
+
+        /// <summary>
+        /// Remove a specific item from this cell (hides it).
+        /// </summary>
+        public void RemoveItem(Transform item)
+        {
+            if (item == null) return;
+
+            item.gameObject.SetActive(false);
+            _items.Remove(item);
+        }
+
+        /// <summary>
+        /// Remove all items from this cell (hides them).
+        /// </summary>
+        public void ClearItems()
+        {
+            foreach (var item in _items)
+            {
+                if (item != null)
+                    item.gameObject.SetActive(false);
+            }
+            _items.Clear();
+        }
+
+        /// <summary>
+        /// Legacy alias for <see cref="ClearItems"/>.
+        /// </summary>
+        public void ClearItem() => ClearItems();
 
         private void LateUpdate()
         {
-            if (_currentItem != null && !_isAnimating)
+            if (_items.Count > 0 && !_isAnimating)
             {
-                UpdateItemPosition();
+                foreach (var item in _items)
+                {
+                    if (item != null)
+                        UpdateItemPosition(item);
+                }
             }
         }
 
@@ -142,22 +210,11 @@ namespace Game
             return ray.GetPoint(_itemDistance) + _itemOffset;
         }
 
-        /// <summary>
-        /// Converts the center of this UI cell from screen space (via the UI camera)
-        /// into a world-space position in front of the 3D camera, so the item
-        /// looks like it's sitting inside the cell.
-        /// </summary>
-        private void UpdateItemPosition()
+        private void UpdateItemPosition(Transform item)
         {
-            _currentItem.position = GetCellWorldPosition();
-
-            // // Optionally face the camera so the item always looks nice.
-            // _currentItem.rotation = Quaternion.LookRotation(
-            //     _currentItem.position - _worldCamera.transform.position,
-            //     _worldCamera.transform.up
-            // );
-            
-            _currentItem.localScale = Vector3.one * _itemScale;
+            item.position = GetCellWorldPosition();
+            item.rotation = Quaternion.Euler(_itemRotation);
+            item.localScale = Vector3.one * _itemScale;
         }
     }
 }
