@@ -21,6 +21,7 @@ namespace DefaultNamespace
 
         public static async UniTask PlayAsync(this PlayableDirector director, CancellationToken ct = default)
         {
+            director.gameObject.SetActive(true);    
             director.Play();
 
             while (director != null)

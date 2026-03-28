@@ -206,7 +206,7 @@ GameObject:
   m_Component:
   - component: {fileID: 287992685}
   m_Layer: 0
-  m_Name: PlaneRootTarget1
+  m_Name: PlaneStartTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -220,13 +220,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 287992684}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.2890318, z: 0, w: 0.9573195}
-  m_LocalPosition: {x: -10.3, y: 0, z: 92}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 33.6, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &288943128
 GameObject:
   m_ObjectHideFlags: 0
@@ -340,35 +340,35 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1211656277776535215, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7221199
+      value: 0.5343722
       objectReference: {fileID: 0}
     - target: {fileID: 1211656277776535215, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.0112349475
+      value: 0.013729572
       objectReference: {fileID: 0}
     - target: {fileID: 1211656277776535215, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.011730703
+      value: -0.008681216
       objectReference: {fileID: 0}
     - target: {fileID: 1211656277776535215, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.69157726
+      value: -0.8450932
       objectReference: {fileID: 0}
     - target: {fileID: 7485755112780616854, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.07442664
+      value: 0.16782534
       objectReference: {fileID: 0}
     - target: {fileID: 7485755112780616854, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.016198628
+      value: 0.016014544
       objectReference: {fileID: 0}
     - target: {fileID: 7485755112780616854, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.0012091282
+      value: 0.0027266336
       objectReference: {fileID: 0}
     - target: {fileID: 7485755112780616854, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.9970942
+      value: 0.9856829
       objectReference: {fileID: 0}
     - target: {fileID: 8128668236925612103, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
       propertyPath: m_Name
@@ -1685,6 +1685,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.GameController
   _faceRightPlayableDirector: {fileID: 190044119}
+  _beforeInventoryPlayableDirector: {fileID: 1874827234}
+  _planeRoot: {fileID: 1105909813}
+  _beforeInventoryStartMarker: {fileID: 287992685}
 --- !u!1 &1377752454
 GameObject:
   m_ObjectHideFlags: 0
@@ -2466,7 +2469,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 8b7e6afd5eb0a40da9f9ab6603124d28, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -2475,6 +2478,61 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &1874827232
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1874827233}
+  - component: {fileID: 1874827234}
+  m_Layer: 0
+  m_Name: BeforeInventory
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1874827233
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874827232}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!320 &1874827234
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874827232}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: 318b78714bc654685a94d1dc86211113, type: 2}
+  m_InitialState: 0
+  m_WrapMode: 0
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: -2106841711510887719, guid: 318b78714bc654685a94d1dc86211113, type: 2}
+    value: {fileID: 1105909813}
+  - key: {fileID: -154226416354083055, guid: 318b78714bc654685a94d1dc86211113, type: 2}
+    value: {fileID: 1753619937}
+  m_ExposedReferences:
+    m_References:
+    - be84289143c2d42e9b0c416b611869f9: {fileID: 1882322818}
+    - 05b9bedf3ea814632918fb68e2fdff8f: {fileID: 287992685}
 --- !u!1 &1882322817
 GameObject:
   m_ObjectHideFlags: 0
@@ -2485,7 +2543,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1882322818}
   m_Layer: 0
-  m_Name: PlaneRootTarget2
+  m_Name: PlaneEndTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2499,13 +2557,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1882322817}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.13755833, y: 0.38890424, z: 0.10729192, w: 0.9046102}
-  m_LocalPosition: {x: -11.33, y: 14.4, z: 40.9}
+  m_LocalRotation: {x: -0.34580857, y: -0.20402682, z: 0.36297768, w: 0.84085476}
+  m_LocalPosition: {x: -32.2, y: 10.147665, z: 109.16843}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: -19.41, y: 45.62, z: 5.3}
+  m_LocalEulerAnglesHint: {x: -154.314, y: 138.75299, z: -123.494995}
 --- !u!1 &2030949688
 GameObject:
   m_ObjectHideFlags: 0
@@ -2832,3 +2890,4 @@ SceneRoots:
   - {fileID: 387490495}
   - {fileID: 576327831}
   - {fileID: 1291716009}
+  - {fileID: 1874827233}
