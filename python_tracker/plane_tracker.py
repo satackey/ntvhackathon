@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,7 @@ AIRPLANE_CLASS_ID = 4
 AIRPLANE_LABEL = "airplane"
 DEFAULT_MODEL_PATH = "yolov8n.pt"
 DEFAULT_TRACKER = "bytetrack.yaml"
+DEFAULT_CACHE_DIR = Path(".plane_tracker_cache")
 
 
 def parse_args() -> argparse.Namespace:
@@ -55,6 +58,29 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_TRACKER,
         help="Ultralytics tracker config. Default: bytetrack.yaml.",
     )
+    parser.add_argument(
+        "--start-time",
+        type=float,
+        default=0.0,
+        help="Optional clip start time in seconds. Default: 0.0.",
+    )
+    parser.add_argument(
+        "--end-time",
+        type=float,
+        default=None,
+        help="Optional clip end time in seconds. If omitted, process until the end.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        type=Path,
+        default=DEFAULT_CACHE_DIR,
+        help="Directory for cached tracking results.",
+    )
+    parser.add_argument(
+        "--force-recompute",
+        action="store_true",
+        help="Ignore existing cache and recompute tracking results.",
+    )
     return parser.parse_args()
 
 
@@ -94,6 +120,100 @@ def create_video_writer(output_path: Path, width: int, height: int, fps: float) 
     if not writer.isOpened():
         raise RuntimeError(f"Could not create output video: {output_path}")
     return writer
+
+
+def sanitize_cache_token(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_.-]+", "-", value)
+
+
+def compute_file_sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file_obj:
+        while chunk := file_obj.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def build_cache_paths(
+    cache_dir: Path,
+    input_path: Path,
+    model: str,
+    tracker: str,
+    conf: float,
+) -> tuple[str, Path]:
+    video_sha = compute_file_sha256(input_path)
+    model_token = sanitize_cache_token(Path(model).name)
+    tracker_token = sanitize_cache_token(Path(tracker).name)
+    conf_token = f"{conf:.3f}".replace(".", "_")
+    cache_key = (
+        f"{video_sha[:16]}_{model_token}_{tracker_token}_airplane_conf-{conf_token}"
+    )
+    return cache_key, cache_dir / f"{cache_key}.json"
+
+
+def format_timecode(time_seconds: float) -> str:
+    total_ms = round(time_seconds * 1000)
+    hours = total_ms // 3_600_000
+    minutes = (total_ms % 3_600_000) // 60_000
+    seconds = (total_ms % 60_000) // 1000
+    milliseconds = total_ms % 1000
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+
+
+def build_frame_payload(
+    frame_index: int,
+    fps: float,
+    detections: list[dict[str, Any]],
+) -> dict[str, Any]:
+    safe_fps = fps if fps > 0 else 30.0
+    time_seconds = frame_index / safe_fps
+    time_ms = round(time_seconds * 1000)
+    return {
+        "frame_index": frame_index,
+        "time_seconds": round(time_seconds, 3),
+        "time_ms": time_ms,
+        "timecode": format_timecode(time_ms / 1000),
+        "detections": detections,
+    }
+
+
+def resolve_frame_range(
+    fps: float,
+    total_frames: int,
+    start_time: float,
+    end_time: float | None,
+) -> tuple[int, int]:
+    safe_fps = fps if fps > 0 else 30.0
+    if start_time < 0:
+        raise ValueError("--start-time must be greater than or equal to 0.")
+    start_frame = int(round(start_time * safe_fps))
+    if end_time is None:
+        end_frame = total_frames
+    else:
+        if end_time < start_time:
+            raise ValueError("--end-time must be greater than or equal to --start-time.")
+        end_frame = int(round(end_time * safe_fps))
+
+    start_frame = min(max(start_frame, 0), total_frames)
+    end_frame = min(max(end_frame, start_frame), total_frames)
+    return start_frame, end_frame
+
+
+def build_output_metadata(
+    source_metadata: dict[str, Any],
+    start_frame: int,
+    end_frame: int,
+) -> dict[str, Any]:
+    fps = source_metadata["fps"]
+    return {
+        **source_metadata,
+        "source_total_frames": source_metadata["total_frames"],
+        "total_frames": end_frame - start_frame,
+        "clip_start_frame": start_frame,
+        "clip_end_frame": end_frame,
+        "clip_start_seconds": round(start_frame / fps, 3) if fps > 0 else 0.0,
+        "clip_end_seconds": round(end_frame / fps, 3) if fps > 0 else 0.0,
+    }
 
 
 def extract_detections(result: Any) -> list[dict[str, Any]]:
@@ -162,24 +282,23 @@ def write_json(output_path: Path, payload: dict[str, Any]) -> None:
     output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def run_tracking(args: argparse.Namespace) -> None:
+def load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def compute_tracking_cache(
+    input_path: Path,
+    model_path: str,
+    tracker: str,
+    conf: float,
+    device: str | None,
+    cache_path: Path,
+) -> dict[str, Any]:
     from ultralytics import YOLO
 
-    if not args.input.exists():
-        raise FileNotFoundError(f"Input video not found: {args.input}")
-    if args.input.suffix.lower() != ".mp4":
-        raise ValueError("Only local .mp4 files are supported.")
-
-    capture = open_video_capture(args.input)
-    metadata = build_metadata(args.input, capture)
-    writer = create_video_writer(
-        args.output_video,
-        metadata["width"],
-        metadata["height"],
-        metadata["fps"],
-    )
-    model = YOLO(args.model)
-
+    capture = open_video_capture(input_path)
+    metadata = build_metadata(input_path, capture)
+    model = YOLO(model_path)
     frames: list[dict[str, Any]] = []
     processed_frames = 0
     progress_total = metadata["total_frames"] or None
@@ -195,24 +314,112 @@ def run_tracking(args: argparse.Namespace) -> None:
                     frame,
                     persist=True,
                     classes=[AIRPLANE_CLASS_ID],
-                    conf=args.conf,
-                    device=args.device,
-                    tracker=args.tracker,
+                    conf=conf,
+                    device=device,
+                    tracker=tracker,
                     verbose=False,
                 )
                 detections = extract_detections(results[0])
-                frames.append({"frame_index": processed_frames, "detections": detections})
-                writer.write(annotate_frame(frame.copy(), detections))
+                frames.append(build_frame_payload(processed_frames, metadata["fps"], detections))
 
                 processed_frames += 1
                 progress.update(1)
     finally:
         capture.release()
-        writer.release()
 
     metadata["total_frames"] = processed_frames
     payload = {"metadata": metadata, "frames": frames}
-    write_json(args.output_json, payload)
+    write_json(cache_path, payload)
+    return payload
+
+
+def get_tracking_cache(args: argparse.Namespace) -> tuple[str, Path, dict[str, Any]]:
+    cache_key, cache_path = build_cache_paths(
+        args.cache_dir,
+        args.input,
+        args.model,
+        args.tracker,
+        args.conf,
+    )
+    if cache_path.exists() and not args.force_recompute:
+        return cache_key, cache_path, load_json(cache_path)
+
+    ensure_parent_dir(cache_path)
+    payload = compute_tracking_cache(
+        args.input,
+        args.model,
+        args.tracker,
+        args.conf,
+        args.device,
+        cache_path,
+    )
+    return cache_key, cache_path, payload
+
+
+def render_clip_from_cache(
+    input_path: Path,
+    output_video: Path,
+    metadata: dict[str, Any],
+    frames: list[dict[str, Any]],
+    start_frame: int,
+    end_frame: int,
+) -> None:
+    capture = open_video_capture(input_path)
+    writer = create_video_writer(
+        output_video,
+        metadata["width"],
+        metadata["height"],
+        metadata["fps"],
+    )
+
+    try:
+        capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        for frame_payload in tqdm(
+            frames,
+            total=len(frames),
+            unit="frame",
+            desc="Rendering debug video",
+        ):
+            ok, frame = capture.read()
+            if not ok:
+                raise RuntimeError(
+                    f"Could not read frame {frame_payload['frame_index']} from input video."
+                )
+
+            writer.write(annotate_frame(frame, frame_payload["detections"]))
+    finally:
+        capture.release()
+        writer.release()
+
+
+def run_tracking(args: argparse.Namespace) -> None:
+    if not args.input.exists():
+        raise FileNotFoundError(f"Input video not found: {args.input}")
+    if args.input.suffix.lower() != ".mp4":
+        raise ValueError("Only local .mp4 files are supported.")
+    _, _, cache_payload = get_tracking_cache(args)
+    source_metadata = cache_payload["metadata"]
+    start_frame, end_frame = resolve_frame_range(
+        source_metadata["fps"],
+        source_metadata["total_frames"],
+        args.start_time,
+        args.end_time,
+    )
+    clip_frames = cache_payload["frames"][start_frame:end_frame]
+    output_payload = {
+        "metadata": build_output_metadata(source_metadata, start_frame, end_frame),
+        "frames": clip_frames,
+    }
+
+    render_clip_from_cache(
+        args.input,
+        args.output_video,
+        source_metadata,
+        clip_frames,
+        start_frame,
+        end_frame,
+    )
+    write_json(args.output_json, output_payload)
 
 
 def main() -> int:

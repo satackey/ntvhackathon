@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from plane_tracker import AIRPLANE_CLASS_ID, AIRPLANE_LABEL, extract_detections
+from plane_tracker import (
+    AIRPLANE_CLASS_ID,
+    AIRPLANE_LABEL,
+    build_frame_payload,
+    build_output_metadata,
+    extract_detections,
+    format_timecode,
+    resolve_frame_range,
+)
 
 
 class FakeTensor:
@@ -52,3 +60,46 @@ def test_extract_detections_skips_untracked_boxes() -> None:
     result = SimpleNamespace(boxes=boxes)
 
     assert extract_detections(result) == []
+
+
+def test_format_timecode_uses_hours_minutes_seconds_and_milliseconds() -> None:
+    assert format_timecode(4.004) == "00:00:04.004"
+    assert format_timecode(65.432) == "00:01:05.432"
+
+
+def test_build_frame_payload_adds_time_fields() -> None:
+    payload = build_frame_payload(120, 29.97, [])
+
+    assert payload == {
+        "frame_index": 120,
+        "time_seconds": 4.004,
+        "time_ms": 4004,
+        "timecode": "00:00:04.004",
+        "detections": [],
+    }
+
+
+def test_resolve_frame_range_uses_seconds_and_clamps_to_bounds() -> None:
+    assert resolve_frame_range(30.0, 900, 1.0, 3.5) == (30, 105)
+    assert resolve_frame_range(30.0, 900, 29.0, 40.0) == (870, 900)
+
+
+def test_build_output_metadata_adds_clip_information() -> None:
+    metadata = build_output_metadata(
+        {
+            "video_name": "plane.mp4",
+            "width": 1920,
+            "height": 1080,
+            "fps": 30.0,
+            "total_frames": 900,
+        },
+        30,
+        105,
+    )
+
+    assert metadata["total_frames"] == 75
+    assert metadata["source_total_frames"] == 900
+    assert metadata["clip_start_frame"] == 30
+    assert metadata["clip_end_frame"] == 105
+    assert metadata["clip_start_seconds"] == 1.0
+    assert metadata["clip_end_seconds"] == 3.5

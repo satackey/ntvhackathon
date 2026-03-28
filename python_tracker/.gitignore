@@ -1,6 +1,7 @@
 .venv/
 .uv-cache/
 .uv-python/
+.plane_tracker_cache/
 .pytest_cache/
 .ruff_cache/
 __pycache__/
