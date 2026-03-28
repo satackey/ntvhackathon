@@ -1,8 +1,5 @@
-namespace Sticker.Runtime.Editor.InspectorTools
-{
     using System.Reflection;
     using System.Collections.Generic;
-    using Sticker.Runtime.Core.InspectorTools;
     using UnityEditor;
     using UnityEngine;
 
@@ -35,4 +32,3 @@ namespace Sticker.Runtime.Editor.InspectorTools
             }
         }
     }
-}

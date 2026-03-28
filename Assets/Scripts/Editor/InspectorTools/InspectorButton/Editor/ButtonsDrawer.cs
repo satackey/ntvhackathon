@@ -1,9 +1,6 @@
-namespace Sticker.Runtime.Editor.InspectorTools
-{
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
-    using Sticker.Runtime.Core.InspectorTools;
     using UnityEditor;
 
     public class ButtonsDrawer
@@ -59,4 +56,3 @@ namespace Sticker.Runtime.Editor.InspectorTools
             }
         }
     }
-}
