@@ -36,9 +36,8 @@ namespace Game
         {
             _faceRightPlayableDirector.Reset();
             _beforeInventoryPlayableDirector.Reset();
-            Debug.Log("Play");  
+            _planeRoot.GetComponent<Animator>().enabled = true;
             await _faceRightPlayableDirector.PlayAsync();
-            Debug.Log("Play"); 
             _planeRoot.GetComponent<Animator>().enabled = false;
             _beforeInventoryStartMarker.position = _planeRoot.position;
             _beforeInventoryStartMarker.rotation = _planeRoot.rotation;
