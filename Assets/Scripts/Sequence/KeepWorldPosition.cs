@@ -64,15 +64,8 @@ namespace Sequence
 
         private void ApplyLockedTransform()
         {
-            if (transform.position != _lockedWorldPosition)
-            {
-                transform.position = _lockedWorldPosition;
-            }
-
-            if (transform.rotation != _lockedWorldRotation)
-            {
-                transform.rotation = _lockedWorldRotation;
-            }
+            transform.position = _lockedWorldPosition;
+            transform.rotation = _lockedWorldRotation;
         }
     }
 }
