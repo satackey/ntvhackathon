@@ -742,13 +742,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.PlanePrefabRegistry
   _entries:
   - id: 0
-    prefab: {fileID: 8128668236925612103, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
+    prefab: {fileID: 6300190715277731404, guid: ee53c661f7b2c4c6e81b5518c9218971, type: 3}
   - id: 1
-    prefab: {fileID: 8128668236925612103, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
+    prefab: {fileID: 6300190715277731404, guid: ee53c661f7b2c4c6e81b5518c9218971, type: 3}
   - id: 2
-    prefab: {fileID: 8128668236925612103, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
+    prefab: {fileID: 6300190715277731404, guid: ee53c661f7b2c4c6e81b5518c9218971, type: 3}
   - id: 3
-    prefab: {fileID: 8128668236925612103, guid: 0e5acf5a735ce4a83963e7c2dabdb073, type: 3}
+    prefab: {fileID: 6300190715277731404, guid: ee53c661f7b2c4c6e81b5518c9218971, type: 3}
 --- !u!114 &506112815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2233,6 +2233,7 @@ MonoBehaviour:
   _playerInventory: {fileID: 506112815}
   _planeId: 0
   _planeParent: {fileID: 936771030}
+  _hitDetector: {fileID: 0}
 --- !u!1 &1377752454
 GameObject:
   m_ObjectHideFlags: 0
