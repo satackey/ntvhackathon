@@ -18,7 +18,8 @@ namespace Game
         [SerializeField] private PlayerInventory _playerInventory;
         [SerializeField] private PlaneId _planeId;
         [SerializeField] private Transform _planeParent;
-            
+        [SerializeField] private Video3HitDetector _hitDetector;
+
         private Animator _planeAnimator;
         private bool _isPlaying;
 
@@ -26,27 +27,27 @@ namespace Game
         {
             _planeAnimator = _planeRoot != null ? _planeRoot.GetComponent<Animator>() : null;
         }
-        
+
         [Button]
         public void PlayFaceRight()
         {
             _faceRightPlayableDirector.Reset();
             _faceRightPlayableDirector.PlayAsync().Forget();
         }
-        
+
         [Button]
         public void PlayBeforeInventory()
         {
             _beforeInventoryPlayableDirector.Reset();
             _beforeInventoryPlayableDirector.PlayAsync().Forget();
         }
-        
+
         [Button]
         public void Play()
         {
             PlayAsync().Forget();
         }
-        
+
         public async UniTask PlayAsync()
         {
             if (_isPlaying)
@@ -98,11 +99,11 @@ namespace Game
                 await _beforeInventoryPlayableDirector.PlayAsync(ct);
 
                 _beforeInventoryPlayableDirector.gameObject.SetActive(false);
-                
+
                 await WaitForClickAsync(ct);
-                
+
                 SetLayerRecursively(_planeRoot.gameObject, LayerMask.NameToLayer("UI"));
-                
+
                 // Unparent the spawned plane and animate it into the inventory view cell
                 spawnedPlane.transform.SetParent(null);
                 await cell.AddItemAsync(spawnedPlane.transform, ct);
@@ -112,10 +113,20 @@ namespace Game
                 cell.UpdateCount(_playerInventory.GetCount(_planeId));
                 await UniTask.Delay(300, cancellationToken: ct); // Wait a moment before closing the inventory view
                 _inventoryView.Close();
-                
+
                 await _resetPlayableDirector.PlayAsync(ct);
                 _resetPlayableDirector.gameObject.SetActive(false);
             }
+            // finally
+            // {
+            //     if (_planeAnimator != null)
+            //     {
+            //         _planeAnimator.enabled = false;
+            //     }
+
+            //     _isPlaying = false;
+            // }
+
             finally
             {
                 if (_planeAnimator != null)
@@ -124,7 +135,15 @@ namespace Game
                 }
 
                 _isPlaying = false;
+
+                if (_hitDetector != null)
+                {
+                    await UniTask.Yield(); // ←これ重要
+                    _hitDetector.ResumeDetection();
+                }
             }
+
+
         }
 
         private static void SetLayerRecursively(GameObject obj, int layer)
