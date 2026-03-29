@@ -488,7 +488,7 @@ MonoBehaviour:
   m_CellSize: {x: 330, y: 330}
   m_Spacing: {x: 30, y: 30}
   m_Constraint: 1
-  m_ConstraintCount: 3
+  m_ConstraintCount: 2
 --- !u!114 &248586432
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2521,7 +2521,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f830631c6dcb4847896ac9d49c4e74ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.PlayerInventory
-  _entries: []
+  _entries:
+  - id: 1
+    count: 2
+  - id: 2
+    count: 1
+  - id: 3
+    count: 2
 --- !u!95 &1366501067
 Animator:
   serializedVersion: 7
