@@ -107,7 +107,7 @@ public class Video3HitDetector : MonoBehaviour
 
                 if (gameController != null)
                 {
-                    await gameController.PlayAsync();
+                    await gameController.PlayAsync(mousePos);
                     ResumeDetection();
                 }
                 // ★ここを追加：1つ当たれば十分なので、他のIDの判定を切り上げる

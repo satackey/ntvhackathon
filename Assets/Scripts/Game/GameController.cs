@@ -20,12 +20,32 @@ namespace Game
         [SerializeField] private Transform _planeParent;
         [SerializeField] private Video3HitDetector _hitDetector;
 
+        [Header("Spawn Markers")]
+        [SerializeField] private Transform[] _spawnMarkers;
+        [SerializeField] private Camera _camera;
+
         private Animator _planeAnimator;
         private bool _isPlaying;
+        
+        // Stores planeRoot's original parent so we can restore it after each play.
+        private Transform _originalPlaneRootParent;
+        // Runtime-created transform that sits between the original parent and _planeRoot.
+        private Transform _spawnOffset;
 
         private void Awake()
         {
             _planeAnimator = _planeRoot != null ? _planeRoot.GetComponent<Animator>() : null;
+            _originalPlaneRootParent = _planeRoot != null ? _planeRoot.parent : null;
+        }
+
+        /// <summary>
+        /// Call from a Timeline Signal to remove the spawn offset.
+        /// Reparents _planeRoot back to its original parent, keeping its current world pose.
+        /// </summary>
+        public void ResetSpawnOffset()
+        {
+            _planeRoot.SetParent(_originalPlaneRootParent, true);
+            Debug.Log($"[GameController] Spawn offset reset – planeRoot world pos: {_planeRoot.position}");
         }
 
         [Button]
@@ -45,10 +65,11 @@ namespace Game
         [Button]
         public void Play()
         {
-            PlayAsync().Forget();
+            var screenPos = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
+            PlayAsync(screenPos).Forget();
         }
 
-        public async UniTask PlayAsync()
+        public async UniTask PlayAsync(Vector2 screenClickPos)
         {
             if (_isPlaying)
             {
@@ -57,6 +78,9 @@ namespace Game
 
             _isPlaying = true;
             var ct = this.GetCancellationTokenOnDestroy();
+
+            // Find the closest spawn marker to the click position
+            var closestMarker = FindClosestMarker(screenClickPos);
 
             // Spawn the plane prefab under _planeParent
             var planePrefab = _planePrefabRegistry.GetPrefab(_planeId);
@@ -76,6 +100,30 @@ namespace Game
 
                 _faceRightPlayableDirector.Reset();
                 _beforeInventoryPlayableDirector.Reset();
+
+                // Timeline's Reset()+Evaluate() writes _planeRoot back to its
+                // default pose. We insert an offset parent so the whole animated
+                // hierarchy is moved to the marker location.
+                if (closestMarker != null)
+                {
+                    var defaultLocalPos = _planeRoot.localPosition;
+                    var defaultLocalRot = _planeRoot.localRotation;
+
+                    if (_spawnOffset == null)
+                    {
+                        _spawnOffset = new GameObject("_SpawnOffset").transform;
+                    }
+
+                    _spawnOffset.SetParent(_originalPlaneRootParent, false);
+                    _spawnOffset.rotation = closestMarker.rotation * Quaternion.Inverse(defaultLocalRot);
+                    _spawnOffset.position = closestMarker.position - _spawnOffset.rotation * defaultLocalPos;
+
+                    _planeRoot.SetParent(_spawnOffset, false);
+                    _planeRoot.localPosition = defaultLocalPos;
+                    _planeRoot.localRotation = defaultLocalRot;
+
+                    Debug.Log($"[GameController] Spawn offset applied – planeRoot world pos: {_planeRoot.position}");
+                }
 
                 if (_planeAnimator != null)
                 {
@@ -134,10 +182,53 @@ namespace Game
                     _planeAnimator.enabled = false;
                 }
 
+                // Restore planeRoot to its original parent
+                if (_planeRoot != null && _originalPlaneRootParent != null)
+                {
+                    _planeRoot.SetParent(_originalPlaneRootParent, false);
+                }
+
                 _isPlaying = false;
             }
 
 
+        }
+
+
+        /// <summary>
+        /// Finds the spawn marker whose screen-space position is closest to the given screen position.
+        /// </summary>
+        private Transform FindClosestMarker(Vector2 screenPos)
+        {
+            if (_spawnMarkers == null || _spawnMarkers.Length == 0)
+            {
+                return null;
+            }
+
+            var cam = _camera != null ? _camera : Camera.main;
+            if (cam == null)
+            {
+                Debug.LogWarning("[GameController] No camera found to project marker positions.");
+                return null;
+            }
+
+            Transform closest = null;
+            float closestDist = float.MaxValue;
+
+            foreach (var marker in _spawnMarkers)
+            {
+                if (marker == null) continue;
+
+                Vector2 markerScreen = cam.WorldToScreenPoint(marker.position);
+                float dist = Vector2.Distance(screenPos, markerScreen);
+                if (dist < closestDist)
+                {
+                    closestDist = dist;
+                    closest = marker;
+                }
+            }
+
+            return closest;
         }
 
         private static void SetLayerRecursively(GameObject obj, int layer)
@@ -193,3 +284,5 @@ namespace Game
         }
     }
 }
+
+
