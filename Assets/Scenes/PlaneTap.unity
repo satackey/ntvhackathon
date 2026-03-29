@@ -2854,7 +2854,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   videoPlayer: {fileID: 1553116888}
-  jsonFile: {fileID: 4900000, guid: 39052b01940e7403ab0697446ca9892b, type: 3}
+  jsonFile: {fileID: 4900000, guid: 99c6949b4e1414f34bbb6396e2b8f874, type: 3}
   gameController: {fileID: 1984228743}
 --- !u!114 &1553116887
 MonoBehaviour:
@@ -2878,7 +2878,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1553116884}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: 5f14317477d1c48919e2ab2769d9fbe3, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: 7d9e5ff59dfd64390adfc3036faa42a3, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -2892,14 +2892,12 @@ VideoPlayer:
   m_TimeUpdateMode: 2
   m_PlaybackSpeed: 1
   m_AudioOutputMode: 2
-  m_TargetAudioSources:
-  - {fileID: 0}
-  m_DirectAudioVolumes:
-  - 1
+  m_TargetAudioSources: []
+  m_DirectAudioVolumes: []
   m_Url: 
-  m_EnabledAudioTracks: 01
-  m_DirectAudioMutes: 01
-  m_ControlledAudioTrackCount: 1
+  m_EnabledAudioTracks: 
+  m_DirectAudioMutes: 
+  m_ControlledAudioTrackCount: 0
   m_PlayOnAwake: 1
   m_SkipOnDrop: 1
   m_Looping: 1

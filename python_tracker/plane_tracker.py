@@ -935,31 +935,33 @@ def enrich_frames_with_fr24(
         unit="track",
         desc="Resolving FR24",
     ):
-
-        track_cache_path = build_fr24_track_cache_path(
-            cache_dir,
-            video_name=metadata["video_name"],
-            clip_start_frame=frames[0]["frame_index"] if frames else 0,
-            clip_end_frame=frames[-1]["frame_index"] if frames else 0,
-            track_id=track_id,
-            camera_bearing=camera_bearing,
-            camera_horizontal_fov=camera_horizontal_fov,
-            search_radius_km=fr24_search_radius_km,
-            max_error_ratio=fr24_match_max_error_ratio,
-        )
-        cached_track_result = load_track_cache(track_cache_path, cache_stats)
-        if cached_track_result is not None:
-            cached_status = cached_track_result.get("status")
-            if cached_status == "matched" and isinstance(
-                cached_track_result.get("flight_info"), dict
-            ):
-                resolved_track_info[track_id] = cached_track_result["flight_info"]
-                track_stats["tracks_matched"] += 1
-            elif cached_status == "no_match":
-                track_stats["tracks_no_match"] += 1
-            elif cached_status == "error":
-                track_stats["tracks_error"] += 1
-            continue
+        # Secondary per-track cache is intentionally disabled. The HTTP response
+        # cache under `.plane_tracker_cache/fr24/` is enough to avoid reusing API
+        # quota, and this layer can go stale when FR24 matching inputs change.
+        # track_cache_path = build_fr24_track_cache_path(
+        #     cache_dir,
+        #     video_name=metadata["video_name"],
+        #     clip_start_frame=frames[0]["frame_index"] if frames else 0,
+        #     clip_end_frame=frames[-1]["frame_index"] if frames else 0,
+        #     track_id=track_id,
+        #     camera_bearing=camera_bearing,
+        #     camera_horizontal_fov=camera_horizontal_fov,
+        #     search_radius_km=fr24_search_radius_km,
+        #     max_error_ratio=fr24_match_max_error_ratio,
+        # )
+        # cached_track_result = load_track_cache(track_cache_path, cache_stats)
+        # if cached_track_result is not None:
+        #     cached_status = cached_track_result.get("status")
+        #     if cached_status == "matched" and isinstance(
+        #         cached_track_result.get("flight_info"), dict
+        #     ):
+        #         resolved_track_info[track_id] = cached_track_result["flight_info"]
+        #         track_stats["tracks_matched"] += 1
+        #     elif cached_status == "no_match":
+        #         track_stats["tracks_no_match"] += 1
+        #     elif cached_status == "error":
+        #         track_stats["tracks_error"] += 1
+        #     continue
 
         track_stats["tracks_queried"] += 1
         attempts: list[dict[str, Any]] = []
@@ -1037,29 +1039,29 @@ def enrich_frames_with_fr24(
 
         if track_error is not None:
             track_stats["tracks_error"] += 1
-            store_track_cache(
-                track_cache_path,
-                {
-                    "status": "error",
-                    "track_id": track_id,
-                    "attempts": attempts,
-                    "error": track_error,
-                },
-                cache_stats,
-            )
+            # store_track_cache(
+            #     track_cache_path,
+            #     {
+            #         "status": "error",
+            #         "track_id": track_id,
+            #         "attempts": attempts,
+            #         "error": track_error,
+            #     },
+            #     cache_stats,
+            # )
             continue
 
         if not candidate_scores:
             track_stats["tracks_no_match"] += 1
-            store_track_cache(
-                track_cache_path,
-                {
-                    "status": "no_match",
-                    "track_id": track_id,
-                    "attempts": attempts,
-                },
-                cache_stats,
-            )
+            # store_track_cache(
+            #     track_cache_path,
+            #     {
+            #         "status": "no_match",
+            #         "track_id": track_id,
+            #         "attempts": attempts,
+            #     },
+            #     cache_stats,
+            # )
             continue
 
         ranked_candidates = sorted(
@@ -1070,16 +1072,16 @@ def enrich_frames_with_fr24(
             ranked_candidates[0]["count"] == ranked_candidates[1]["count"]
         ):
             track_stats["tracks_no_match"] += 1
-            store_track_cache(
-                track_cache_path,
-                {
-                    "status": "no_match",
-                    "reason": "ambiguous",
-                    "track_id": track_id,
-                    "attempts": attempts,
-                },
-                cache_stats,
-            )
+            # store_track_cache(
+            #     track_cache_path,
+            #     {
+            #         "status": "no_match",
+            #         "reason": "ambiguous",
+            #         "track_id": track_id,
+            #         "attempts": attempts,
+            #     },
+            #     cache_stats,
+            # )
             continue
 
         best_match = ranked_candidates[0]
@@ -1096,16 +1098,16 @@ def enrich_frames_with_fr24(
         )
         resolved_track_info[track_id] = flight_info
         track_stats["tracks_matched"] += 1
-        store_track_cache(
-            track_cache_path,
-            {
-                "status": "matched",
-                "track_id": track_id,
-                "attempts": attempts,
-                "flight_info": flight_info,
-            },
-            cache_stats,
-        )
+        # store_track_cache(
+        #     track_cache_path,
+        #     {
+        #         "status": "matched",
+        #         "track_id": track_id,
+        #         "attempts": attempts,
+        #         "flight_info": flight_info,
+        #     },
+        #     cache_stats,
+        # )
 
     for frame_payload in frames:
         for detection in frame_payload["detections"]:
