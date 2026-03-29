@@ -63,7 +63,7 @@ public class Video3HitDetector : MonoBehaviour
         }
     }
 
-    void CheckHit()
+    async void CheckHit()
     {
         if (videoData == null || videoPlayer == null) return;
 
@@ -107,10 +107,9 @@ public class Video3HitDetector : MonoBehaviour
 
                 if (gameController != null)
                 {
-                    gameController.Play();
+                    await gameController.PlayAsync();
+                    ResumeDetection();
                 }
-
-                isAnyHit = true;
                 // ★ここを追加：1つ当たれば十分なので、他のIDの判定を切り上げる
                 break;
 

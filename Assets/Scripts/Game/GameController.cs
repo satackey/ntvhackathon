@@ -135,12 +135,6 @@ namespace Game
                 }
 
                 _isPlaying = false;
-
-                if (_hitDetector != null)
-                {
-                    await UniTask.Yield(); // ←これ重要
-                    _hitDetector.ResumeDetection();
-                }
             }
 
 
