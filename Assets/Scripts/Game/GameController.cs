@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using DefaultNamespace;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.InputSystem;
@@ -16,9 +17,9 @@ namespace Game
         [SerializeField] private InventoryView _inventoryView;
         [SerializeField] private PlanePrefabRegistry _planePrefabRegistry;
         [SerializeField] private PlayerInventory _playerInventory;
-        [SerializeField] private PlaneId _planeId;
         [SerializeField] private Transform _planeParent;
         [SerializeField] private Video3HitDetector _hitDetector;
+        [SerializeField] private TMP_Text _planeDeets;
 
         [Header("Spawn Markers")]
         [SerializeField] private Transform[] _spawnMarkers;
@@ -82,11 +83,28 @@ namespace Game
             // Find the closest spawn marker to the click position
             var closestMarker = FindClosestMarker(screenClickPos);
 
+            // Read plane data from the marker's SpawnMarkerData component
+            var markerData = closestMarker != null ? closestMarker.GetComponent<SpawnMarkerData>() : null;
+            if (markerData == null)
+            {
+                Debug.LogError("[GameController] Closest marker has no SpawnMarkerData component.");
+                _isPlaying = false;
+                return;
+            }
+
+            var planeId = markerData.PlaneId;
+
+            // Update the plane deets text
+            if (_planeDeets != null)
+            {
+                _planeDeets.text = markerData.PlaneDeets;
+            }
+
             // Spawn the plane prefab under _planeParent
-            var planePrefab = _planePrefabRegistry.GetPrefab(_planeId);
+            var planePrefab = _planePrefabRegistry.GetPrefab(planeId);
             if (planePrefab == null)
             {
-                Debug.LogError($"[GameController] No plane prefab found for id \"{_planeId}\".");
+                Debug.LogError($"[GameController] No plane prefab found for id \"{planeId}\".");
                 _isPlaying = false;
                 return;
             }
@@ -95,7 +113,7 @@ namespace Game
             try
             {
                 // Ensure the cell for this plane exists before opening (count 0 until fly-in)
-                var cell = _inventoryView.GetOrCreateCell(_planeId, 0);
+                var cell = _inventoryView.GetOrCreateCell(planeId, 0);
                 SetLayerRecursively(_planeRoot.gameObject, LayerMask.NameToLayer("Default"));
 
                 _faceRightPlayableDirector.Reset();
@@ -157,8 +175,8 @@ namespace Game
                 await cell.AddItemAsync(spawnedPlane.transform, ct);
 
                 // Add the plane to the player's inventory and update the cell count
-                _playerInventory.Add(_planeId);
-                cell.UpdateCount(_playerInventory.GetCount(_planeId));
+                _playerInventory.Add(planeId);
+                cell.UpdateCount(_playerInventory.GetCount(planeId));
                 await UniTask.Delay(300, cancellationToken: ct); // Wait a moment before closing the inventory view
                 _inventoryView.Close();
 
@@ -284,5 +302,4 @@ namespace Game
         }
     }
 }
-
 
