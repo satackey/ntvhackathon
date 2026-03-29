@@ -83,9 +83,11 @@ public class Video3HitDetector : MonoBehaviour
 
         bool isAnyHit = false;
 
+        int[] validIds = { 1, 2, 3, 4, 155, 166, 2289, 388, 513, 637, 743, 935, 1046, 1408, 1534, 1581, 1742, 1968, 2219, 2484, 2822, 2898, 3092, 3129, 3177, 3292, 3331, 3366, 3400, 3946, 4001 };
+
         foreach (var detection in frameInfo.detections)
         {
-            if (detection.track_id != 1 && detection.track_id != 3)
+            if (Array.IndexOf(validIds, detection.track_id) < 0)
             {
                 continue;
             }
