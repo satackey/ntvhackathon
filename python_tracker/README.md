@@ -143,7 +143,7 @@ UV_CACHE_DIR=.uv-cache UV_PYTHON_INSTALL_DIR=.uv-python uv sync --dev
 - `schemas/plane-tracking.schema.json` に出力 JSON の JSON Schema を置いています
 - `.plane_tracker_cache/` に動画 SHA256 ベースの推論キャッシュを保存します
 - FR24 の historical API 応答も `.plane_tracker_cache/fr24/` に保存され、同じ timestamp+bounds の再実行では API quota を再消費しません
-- FR24 の track 調査結果は `.plane_tracker_cache/fr24_tracks/` に保存され、同じ clip / `track_id` / matching 条件の再実行では API を再問い合わせしません
+- FR24 の historical API 応答は `.plane_tracker_cache/fr24/` のみをキャッシュ対象としています。`.plane_tracker_cache/fr24_tracks/` の track 調査結果キャッシュは現在コード上で無効化しています
 - キャッシュキーには動画 SHA256、モデル、tracker、conf、`inference_stride` が含まれます
 - `.venv/`、`.uv-cache/`、`.uv-python/` は生成物なので Git には含めません
 - FR24 連携では起動時に `.env` を読み込み、`FLIGHTRADAR24_API_KEY` または `FR24_API_TOKEN` を環境変数として利用します
