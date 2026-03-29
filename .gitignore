@@ -11,6 +11,8 @@
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/
+/Assets/Fonts/
+/Assets/Fonts.meta 
 /[Uu]ser[Ss]ettings/
 *.log
 
